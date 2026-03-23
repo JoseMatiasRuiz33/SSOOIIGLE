@@ -1,0 +1,32 @@
+80% users premium, 20% normales
+
+Cada usuario es un hilo. Cada usuario busca en varios libros. Al empezar hay un hilo por libro.
+
+Para que un haya varios hilos en varios libros podríamos crear un hilo al empezar el análisis de un libro,
+y dicho hilo crearía múltiples hilos de búsqueda una vez iniciado el libro.
+
+Límite de resultados, el usuario tiene un límite máximo fijo.
+
+El cliente premium tiene un límite máximo variable, límite que se recarga una vez gastado.
+
+El cliente premium+ no tiene límite de búsqueda.
+
+Sistema de pago de único hilo (singleton).
+
+Usuario, Sistema de Búsqueda y Sistema de pagos.
+
+Usuario habla al sistema de busqueda, no tiene creditos, este devuelve comunicacion al Usuario. El usuario va al sistema de pago,
+el sistema de pago le dice que ha sido correcto y ya le vuelve a escribir al sistema de pago (caso ideal y muy complejo).
+
+En nuestro caso, por hacerlo más simple, el usuario hace una búsqueda al sistema de búsquedas y ESTE SISTEMA DE BÚSQUEDAS se
+comunica con el sistema de pagos, entonces el sistema de pagos termina y devuelve al sistema de búsquedas y el de búsquedas ya
+notifica al usuario (caso más sencillo y lineal).
+
+El propio cliente muestra los resultados.
+
+Por pantalla mostrar lo que pasa (si se ha creado un cliente, si se ha hecho una peticion de pagos, si se ha creado una peticion,
+si se ha hecho algún pago)... Cada cliente crea un archivo de logs.
+
+Se puede hacer una cola en el usuario de Peticiones de búsqueda y en el Sistema de Búsquedas otra cola de Búsquedas.
+
+El sistema de pago mejor un proceso independiente.
