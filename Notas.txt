@@ -30,3 +30,16 @@ si se ha hecho algún pago)... Cada cliente crea un archivo de logs.
 Se puede hacer una cola en el usuario de Peticiones de búsqueda y en el Sistema de Búsquedas otra cola de Búsquedas.
 
 El sistema de pago mejor un proceso independiente.
+
+=====================================================
+ORDEN DE LAS TAREAS:
+
+1. Crear diccionario de strings
+2. Obtener una palabra al azar del diccionario
+3. Crear los usuarios
+4. Empezar búsquedas MIENTRAS se crean los usuarios.
+5. Selección de clientes 80% premium, 20% normal de manera concurrente limitado a un número N de clientes a la vez (N=4, 4 clientes a la vez)
+6. Búsqueda sobre varios libros. (Probamos 1 hilo por libro, y luego vemos si hacemos varios hilos por libro) según tipo de cliente.
+7. Crear el sistema de pago singleton con un hilo, dormirlo (Variable de condición).
+8. Cliente muestra resultados del sistema de pago por pantalla según formato de la P2 + Tiempo total de búsqueda dedicado al cliente
+9. Mostrar por pantalla la finalización de cada uno de los procesos cliente.
