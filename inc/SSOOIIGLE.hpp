@@ -108,3 +108,12 @@ class Buscador{
         }
 };
 
+class Usuario{
+
+    public:
+        int id;
+        int saldo;
+        enum Categoria{Gratuito, PremiumLimitado,Premium};
+    
+};
+
