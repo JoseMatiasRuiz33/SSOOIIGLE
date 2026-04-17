@@ -59,8 +59,9 @@ std::vector<std::streampos> calcularOffsets(std::ifstream &file, int nHilos){
 
     while(getline(file, line)){
         contador++;
+        
 
-        if(contador % lineasPorHilo == 0 && offsets.size() < static_cast<std::size_t>(nHilos)){
+        if(contador % lineasPorHilo == 0 && offsets.size() < (long unsigned int)nHilos){
             offsets.push_back(file.tellg());
         }
     }
