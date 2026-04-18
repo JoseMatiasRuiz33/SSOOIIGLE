@@ -15,9 +15,8 @@ clean:
 dirs:
 	mkdir -p $(DIROBJ) $(DIREXE) 
 
-SSOOIIGLE: $(DIROBJ)SSOOIIGLE.o 
+SSOOIIGLE: $(DIROBJ)SSOOIIGLE.o $(DIROBJ)Buscador.o $(DIROBJ)ResultadoBusqueda.o
 	$(CC) -o $(DIREXE)$@ $^ -pthread
-
 
 $(DIROBJ)%.o: $(DIRSRC)%.cpp
 	$(CC) $(CFLAGS) -c $< -o $@ 
