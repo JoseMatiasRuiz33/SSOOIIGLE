@@ -145,9 +145,9 @@ int main(int argc, char *argv[])
             for (const auto &r : buscadores[i].vectorBusquedas)
             {
                 std::cout << "[Hilo " << buscadores[i].id
-                          << " inicio:" << lineas[i]
-                          << " – final: " << lineas[i + 1]
-                          << "] :: línea " << r.Linea
+                          << " inicio:" << lineas[i]+1
+                          << " - final: " << lineas[i + 1]
+                          << "] :: línea " << r.Linea+lineas[i]
                           << " :: … " << r.Anterior
                           << " " << buscadores[i].palabra
                           << " " << r.Posterior << " …" << std::endl;
