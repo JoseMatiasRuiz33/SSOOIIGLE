@@ -2,167 +2,96 @@
 #include <vector>
 #include <thread>
 #include <fstream>
+#include <chrono>
+#include <ctime>
 #include <stdexcept>
-#include "Buscador.hpp"
+#include "Cliente.hpp"
 
 #define PATH_DATA "data/"
+#define DICT_FILE "data/diccionario.txt"
 
-void parse_argv(int *nHilos, std::ifstream *fichero,
-                std::string *palabra, std::string *ruta,
-                int argc, char *argv[])
+void parse_argv(int *nClientes, int *nReplicas, int argc, char *argv[])
 {
-
     try
     {
-
-        if (argc != 4)
+        if (argc != 3)
         {
-            throw std::invalid_argument("Uso: ./SSOOIIGLE <archivo> <palabra> <hilos>");
+            throw std::invalid_argument("Uso: ./SSOOIIGLE <num_clientes> <n_replicas>");
         }
 
-        *ruta = PATH_DATA;
-        fichero->open((*ruta += (*++argv)));
+        *nClientes = std::stoi(argv[1]);
+        *nReplicas = std::stoi(argv[2]);
 
-        if (fichero->fail())
+        if (*nClientes <= 0 || *nReplicas <= 0)
         {
-            throw std::runtime_error("No se pudo abrir el fichero");
-        }
-
-        *palabra = *++argv;
-
-        *nHilos = atoi(*++argv);
-
-        if (*nHilos <= 0)
-        {
-            throw std::invalid_argument("Número de hilos inválido");
+            throw std::invalid_argument("Los parámetros deben ser números enteros positivos.");
         }
     }
     catch (const std::exception &e)
     {
-        std::cerr << "[Error] " << e.what() << std::endl;
+        std::cerr << "[Error Argumentos] " << e.what() << std::endl;
         exit(EXIT_FAILURE);
     }
 }
 
-std::vector<int> calcularLineas(std::string ruta, const std::vector<std::streampos> &offsets)
+std::vector<std::string> cargarDiccionario()
 {
-    std::ifstream file(ruta);
-    std::vector<int> lineas;
-
-    lineas.push_back(1);
-
-    int contadorActual = 1;
-    std::string dummy;
-
-    for (size_t i = 1; i < offsets.size(); i++)
+    std::vector<std::string> diccionario;
+    std::ifstream f(DICT_FILE);
+    if (!f.is_open())
     {
-
-        while (file.tellg() < offsets[i] && std::getline(file, dummy))
-        {
-            contadorActual++;
-        }
-
-        lineas.push_back(contadorActual);
+        throw std::runtime_error("No se puede abrir el archivo diccionario.txt");
     }
-
-    return lineas;
-}
-
-std::vector<std::streampos> calcularOffsets(std::ifstream &file, int nHilos)
-{
-
-    std::vector<std::streampos> offsets(nHilos + 1);
-
-    file.seekg(0, std::ios::end);
-    int totalBytes = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    int bytesPorHilo = totalBytes / nHilos;
-
-    offsets[0] = 0;
-
-    for (int i = 1; i < nHilos; i++)
+    std::string palabra;
+    while (f >> palabra)
     {
-        int posicion = i * bytesPorHilo;
-        file.seekg(posicion);
-        std::string lineaDescartada;
-        std::getline(file, lineaDescartada);
-        offsets[i] = file.tellg();
+        diccionario.push_back(palabra);
     }
-
-    offsets[nHilos] = totalBytes;
-
-    file.clear();
-    file.seekg(0, std::ios::beg);
-
-    return offsets;
-}
-
-void crearBuscadores(std::string ruta, std::string palabra,
-                     std::vector<Buscador> &buscadores,
-                     std::vector<std::thread> &vThreads,
-                     std::vector<std::streampos> &offsets)
-{
-
-    int nHilos = offsets.size() - 1;
-
-    buscadores.reserve(nHilos);
-
-    for (int i = 0; i < nHilos; i++)
-    {
-        buscadores.emplace_back(i + 1, offsets[i], offsets[i + 1], palabra);
-        vThreads.emplace_back(std::ref(buscadores.back()), ruta);
-    }
-
-    for (std::thread &t : vThreads)
-    {
-        t.join();
-    }
+    return diccionario;
 }
 
 int main(int argc, char *argv[])
 {
-
+    int numClientes, nReplicas;
+    srand(time(NULL));
     try
     {
 
-        int nHilos;
-        std::string palabra, ruta;
-        std::ifstream fichero;
+        parse_argv(&numClientes, &nReplicas, argc, argv);
 
-        std::vector<std::thread> vThreads;
-        std::vector<Buscador> buscadores;
+        std::vector<std::string> diccionario = cargarDiccionario();
+        std::vector<Cliente> vClientes;
+        std::vector<std::thread> hilosClientes;
 
-        parse_argv(&nHilos, &fichero, &palabra, &ruta, argc, argv);
-
-        std::vector<std::streampos> offsets = calcularOffsets(fichero, nHilos);
-        std::vector<int> lineas = calcularLineas(ruta, offsets);
-
-        crearBuscadores(ruta, palabra, buscadores, vThreads, offsets);
-
-        for (size_t i = 0; i < buscadores.size(); i++)
+        for (int i = 0; i < numClientes; i++)
         {
-            for (const auto &r : buscadores[i].vectorBusquedas)
-            {
-                std::cout << "[Hilo " << buscadores[i].id
-                          << " inicio:" << lineas[i]+1
-                          << " - final: " << lineas[i + 1]
-                          << "] :: línea " << r.Linea+lineas[i]
-                          << " :: … " << r.Anterior
-                          << " " << buscadores[i].palabra
-                          << " " << r.Posterior << " …" << std::endl;
-            }
+            std::string palabra = diccionario[rand() % diccionario.size()];
+            TipoUsuario tipo;
+            int prob = rand() % 100;
+            if (prob < 20)
+                tipo = TipoUsuario::PremiumIlimitado;
+            else if (prob < 60)
+                tipo = TipoUsuario::Premium;
+            else
+                tipo = TipoUsuario::Gratuito;
+
+            vClientes.emplace_back(i + 1, tipo, palabra, 20);
+
+            hilosClientes.emplace_back(std::ref(vClientes.back()));
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
-        std::cout << "Hilos: " << buscadores.size() << std::endl;
 
-        for (auto &b : buscadores)
+        for (auto &t : hilosClientes)
         {
-            std::cout << "Hilo " << b.id << " resultados: "
-                      << b.vectorBusquedas.size() << std::endl;
+            if (t.joinable())
+                t.join();
         }
-        for (auto o : offsets)
+
+        std::cout << "Resultados de busqueda: " << std::endl;
+        for (const auto &c : vClientes)
         {
-            std::cout << o << std::endl;
+            //Imprimir resultados
         }
     }
     catch (const std::exception &e)

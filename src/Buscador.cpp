@@ -3,14 +3,16 @@
 #include <sstream>
 #include <stdexcept>
 
-Buscador::Buscador(int id, std::streampos inicioPos, std::streampos finPos, std::string palabra){
+Buscador::Buscador(int id, std::streampos inicioPos, std::streampos finPos, std::string palabra)
+{
     this->id = id;
     this->inicioPos = inicioPos;
     this->finPos = finPos;
     this->palabra = palabra;
 }
 
-void Buscador::buscar(std::ifstream *file){
+void Buscador::buscar(std::ifstream *file)
+{
     file->seekg(inicioPos);
 
     std::string line;
@@ -19,13 +21,16 @@ void Buscador::buscar(std::ifstream *file){
     std::string palabra_siguiente;
     int linea = 0;
 
-    while(file->tellg() < finPos && getline(*file, line)){
+    while (file->tellg() < finPos && getline(*file, line))
+    {
         linea++;
         std::stringstream ss(line);
         palabra_anterior = "";
 
-        while(ss >> palabra_local){
-            if(palabra_local == palabra){
+        while (ss >> palabra_local)
+        {
+            if (palabra_local == palabra)
+            {
                 ss >> palabra_siguiente;
                 vectorBusquedas.emplace_back(linea, palabra_anterior, palabra_siguiente);
             }
@@ -34,18 +39,70 @@ void Buscador::buscar(std::ifstream *file){
     }
 }
 
-void Buscador::operator()(std::string ruta){
+void Buscador::operator()(std::string ruta)
+{
 
-    try{
+    try
+    {
         std::ifstream fichero(ruta);
 
-        if(!fichero){
+        if (!fichero)
+        {
             throw std::runtime_error("[Buscador] No se pudo abrir el fichero");
         }
 
         buscar(&fichero);
     }
-    catch(const std::exception &e){
+    catch (const std::exception &e)
+    {
         std::cerr << e.what() << std::endl;
     }
+}
+
+std::vector<std::streampos> Buscador::calcularOffsets(std::ifstream &file, int nHilos)
+{
+    std::vector<std::streampos> offsets(nHilos + 1);
+
+    file.seekg(0, std::ios::end);
+    int totalBytes = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    int bytesPorHilo = totalBytes / nHilos;
+    offsets[0] = 0;
+
+    for (int i = 1; i < nHilos; i++)
+    {
+        int posicion = i * bytesPorHilo;
+        file.seekg(posicion);
+        std::string lineaDescartada;
+        std::getline(file, lineaDescartada);
+        offsets[i] = file.tellg();
+    }
+
+    offsets[nHilos] = totalBytes;
+    file.clear();
+    file.seekg(0, std::ios::beg);
+
+    return offsets;
+}
+
+std::vector<int> Buscador::calcularLineas(std::string ruta, const std::vector<std::streampos> &offsets)
+{
+    std::ifstream file(ruta);
+    std::vector<int> lineas;
+
+    lineas.push_back(1);
+    int contadorActual = 1;
+    std::string dummy;
+
+    for (size_t i = 1; i < offsets.size(); i++)
+    {
+        while (file.tellg() < offsets[i] && std::getline(file, dummy))
+        {
+            contadorActual++;
+        }
+        lineas.push_back(contadorActual);
+    }
+
+    return lineas;
 }
