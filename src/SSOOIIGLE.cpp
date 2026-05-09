@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
         parse_argv(&numClientes, &nReplicas, argc, argv);
 
         std::vector<std::string> diccionario = cargarDiccionario();
-        std::vector<Cliente> vClientes;
+        std::vector<Cliente*> vClientes;
         std::vector<std::thread> hilosClientes;
 
         for (int i = 0; i < numClientes; i++)
@@ -75,9 +75,9 @@ int main(int argc, char *argv[])
             else
                 tipo = TipoUsuario::Gratuito;
 
-            vClientes.emplace_back(i + 1, tipo, palabra, 20);
+            vClientes.push_back(new Cliente(i + 1, tipo, palabra, 20));
 
-            hilosClientes.emplace_back(std::ref(vClientes.back()));
+            hilosClientes.emplace_back(std::ref(*vClientes.back()));
 
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
         }
 
         std::cout << "Resultados de busqueda: " << std::endl;
-        for (const auto &c : vClientes)
+        for (auto c : vClientes)
         {
             //Imprimir resultados
         }

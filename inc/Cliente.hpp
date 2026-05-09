@@ -22,7 +22,7 @@ public:
     TipoUsuario tipo;
     std::string palabraBusqueda;
     int saldo;
-    int maxPalabras;
+    size_t maxPalabras;
     double tiempoBusqueda;
     std::vector<ResultadoBusqueda> resultados;
 
