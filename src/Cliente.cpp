@@ -1,12 +1,14 @@
 #include "Cliente.hpp"
+#include "Monitor.hpp"
+#include "SistemaPago.hpp"
 #include <iostream>
 #include <chrono>
 #include <filesystem>
 
 namespace fs = std::filesystem;
 
-Cliente::Cliente(int id, TipoUsuario tipo, std::string palabra, int saldoInicial)
-    : id(id), tipo(tipo), palabraBusqueda(palabra), saldo(saldoInicial)
+Cliente::Cliente(int id, TipoUsuario tipo, std::string palabra, Monitor *m, SistemaPago *sp, int saldoInicial)
+    : id(id), tipo(tipo), palabraBusqueda(palabra), saldo(saldoInicial), monitor(m), sistemaPago(sp)
 {
     this->maxPalabras = 10;
     this->tiempoBusqueda = 0.0;
@@ -15,14 +17,11 @@ Cliente::Cliente(int id, TipoUsuario tipo, std::string palabra, int saldoInicial
 void Cliente::operator()()
 {
     auto inicio = std::chrono::high_resolution_clock::now();
-
-    std::cout << "[Cliente " << id << "] Empezando búsqueda...." << std::endl;
-
+    monitor->esperarTurno(this->tipo);
     realizarBusqueda();
-
+    monitor->liberarTurno();
     auto fin = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> transcurrido = fin - inicio;
-    this->tiempoBusqueda = transcurrido.count();
+    this->tiempoBusqueda = std::chrono::duration<double>(fin - inicio).count();
 }
 
 void Cliente::realizarBusqueda()
@@ -38,15 +37,31 @@ void Cliente::realizarBusqueda()
 
     std::vector<std::thread> hilosLibros;
     std::vector<Buscador> buscadores;
+
+    unsigned int nHilosPorLibro = std::thread::hardware_concurrency();
+    if (nHilosPorLibro == 0)
+        nHilosPorLibro = 2;
+
+    buscadores.reserve(libros.size() * nHilosPorLibro);
+    hilosLibros.reserve(libros.size() * nHilosPorLibro);
+
     for (const auto &rutaLibro : libros)
     {
         std::ifstream file(rutaLibro);
         if (file.is_open())
         {
-            // 1 hilo por libro
-            auto offsets = Buscador::calcularOffsets(file, 1);
-            buscadores.emplace_back(id, offsets[0], offsets[1], palabraBusqueda);
-            hilosLibros.emplace_back(std::ref(buscadores.back()), rutaLibro);
+
+            auto offsets = Buscador::calcularOffsets(file, nHilosPorLibro);
+
+            for (unsigned int i = 0; i < nHilosPorLibro; i++)
+            {
+
+                int pIni = (i * 100) / nHilosPorLibro;
+                int pFin = ((i + 1) * 100) / nHilosPorLibro;
+
+                buscadores.emplace_back(id, offsets[i], offsets[i + 1], palabraBusqueda, i + 1, pIni, pFin);
+                hilosLibros.emplace_back(std::ref(buscadores.back()), rutaLibro);
+            }
         }
     }
 
@@ -60,7 +75,6 @@ void Cliente::realizarBusqueda()
     {
         for (const auto &res : b.vectorBusquedas)
         {
-
             if (tipo == TipoUsuario::Gratuito && resultados.size() >= maxPalabras)
             {
                 return;
@@ -70,7 +84,8 @@ void Cliente::realizarBusqueda()
             {
                 if (saldo <= 0)
                 {
-                    // Llamamos al Sistema de Pago para recargar
+
+                    sistemaPago->solicitarPago(this->id, this->saldo);
                 }
                 saldo--;
             }

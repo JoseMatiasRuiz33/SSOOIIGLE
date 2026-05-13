@@ -3,13 +3,18 @@
 
 #include <string>
 
-class ResultadoBusqueda{
-    public:
-        int Linea;
-        std::string Anterior;
-        std::string Posterior;
+class ResultadoBusqueda
+{
+public:
+    int Linea;
+    std::string Anterior;
+    std::string Posterior;
 
-        ResultadoBusqueda(int Linea, std::string Anterior, std::string Posterior);
+    int idHilo;
+    int inicio;
+    int fin;
+
+    ResultadoBusqueda(int Linea, std::string Anterior, std::string Posterior, int idHilo, int inicio, int fin);
 };
 
 #endif

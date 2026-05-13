@@ -15,6 +15,9 @@ enum class TipoUsuario
     PremiumIlimitado
 };
 
+class Monitor;
+class SistemaPago;
+
 class Cliente
 {
 public:
@@ -26,12 +29,12 @@ public:
     double tiempoBusqueda;
     std::vector<ResultadoBusqueda> resultados;
 
-    std::mutex mtxResultados;
+    Monitor *monitor;
+    SistemaPago *sistemaPago;
 
-    Cliente(int id, TipoUsuario tipo, std::string palabra, int saldoInicial = 0);
+    Cliente(int id, TipoUsuario tipo, std::string palabra, Monitor *m, SistemaPago *sp, int saldoInicial = 0);
 
     void operator()();
-
     void realizarBusqueda();
 };
 

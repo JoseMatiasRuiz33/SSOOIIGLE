@@ -13,9 +13,14 @@ public:
     std::streampos inicioPos;
     std::streampos finPos;
     std::string palabra;
+
+    int idHilo;
+    int inicioPct;
+    int finPct;
+
     std::vector<ResultadoBusqueda> vectorBusquedas;
 
-    Buscador(int id, std::streampos inicioPos, std::streampos finPos, std::string palabra);
+    Buscador(int id, std::streampos inicioPos, std::streampos finPos, std::string palabra, int idHilo, int inicioPct, int finPct);
 
     void buscar(std::ifstream *file);
     void operator()(std::string ruta);

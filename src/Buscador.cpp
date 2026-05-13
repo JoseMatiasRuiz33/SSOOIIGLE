@@ -3,12 +3,15 @@
 #include <sstream>
 #include <stdexcept>
 
-Buscador::Buscador(int id, std::streampos inicioPos, std::streampos finPos, std::string palabra)
+Buscador::Buscador(int id, std::streampos inicioPos, std::streampos finPos, std::string palabra, int idHilo, int inicioPct, int finPct)
 {
     this->id = id;
     this->inicioPos = inicioPos;
     this->finPos = finPos;
     this->palabra = palabra;
+    this->idHilo = idHilo;
+    this->inicioPct = inicioPct;
+    this->finPct = finPct;
 }
 
 void Buscador::buscar(std::ifstream *file)
@@ -31,8 +34,13 @@ void Buscador::buscar(std::ifstream *file)
         {
             if (palabra_local == palabra)
             {
-                ss >> palabra_siguiente;
-                vectorBusquedas.emplace_back(linea, palabra_anterior, palabra_siguiente);
+
+                if (!(ss >> palabra_siguiente))
+                {
+                    palabra_siguiente = "";
+                }
+
+                vectorBusquedas.emplace_back(linea, palabra_anterior, palabra_siguiente, idHilo, inicioPct, finPct);
             }
             palabra_anterior = palabra_local;
         }
@@ -41,7 +49,6 @@ void Buscador::buscar(std::ifstream *file)
 
 void Buscador::operator()(std::string ruta)
 {
-
     try
     {
         std::ifstream fichero(ruta);
