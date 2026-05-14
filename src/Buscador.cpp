@@ -2,13 +2,37 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+/**
+ * Archivo: Buscador.cpp
+ * Proyecto: SSOOIIGLE - Buscador multihilo de palabras en ficheros de texto
+ *
+ * Descripción:
+ * Implementación de la clase Buscador, que realiza la búsqueda
+ * concurrente de una palabra en un fragmento de un fichero de texto.
+ * Cada instancia trabaja sobre un rango de bytes (inicioPos–finPos)
+ * calculado previamente con calcularOffsets(), de modo que varios
+ * hilos pueden recorrer el mismo fichero en paralelo sin solapamiento.
+ *
+ * Funciones implementadas:
+ *  - Buscador          (constructor)
+ *  - buscar            (búsqueda línea a línea en el rango asignado)
+ *  - operator()        (punto de entrada del hilo)
+ *  - calcularOffsets   (partición del fichero en fragmentos alineados)
+ *  - calcularLineas    (traducción de offsets a números de línea)
+ *
+ * Autores: [Jose Matías Ruiz Valero y Héctor García Rubio]
+ * Fecha: 2026-05-14
+ */
 
-Buscador::Buscador(int id, std::streampos inicioPos, std::streampos finPos, std::string palabra)
+Buscador::Buscador(int id, std::streampos inicioPos, std::streampos finPos, std::string palabra, int idHilo, int inicioPct, int finPct)
 {
     this->id = id;
     this->inicioPos = inicioPos;
     this->finPos = finPos;
     this->palabra = palabra;
+    this->idHilo = idHilo;
+    this->inicioPct = inicioPct;
+    this->finPct = finPct;
 }
 
 void Buscador::buscar(std::ifstream *file)
@@ -31,8 +55,13 @@ void Buscador::buscar(std::ifstream *file)
         {
             if (palabra_local == palabra)
             {
-                ss >> palabra_siguiente;
-                vectorBusquedas.emplace_back(linea, palabra_anterior, palabra_siguiente);
+
+                if (!(ss >> palabra_siguiente))
+                {
+                    palabra_siguiente = "";
+                }
+
+                vectorBusquedas.emplace_back(linea, palabra_anterior, palabra_siguiente, idHilo, inicioPct, finPct);
             }
             palabra_anterior = palabra_local;
         }
@@ -41,7 +70,6 @@ void Buscador::buscar(std::ifstream *file)
 
 void Buscador::operator()(std::string ruta)
 {
-
     try
     {
         std::ifstream fichero(ruta);

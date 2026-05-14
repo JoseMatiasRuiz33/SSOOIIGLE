@@ -15,15 +15,14 @@ clean:
 dirs:
 	mkdir -p $(DIROBJ) $(DIREXE) 
 
-SSOOIIGLE: $(DIROBJ)SSOOIIGLE.o $(DIROBJ)Buscador.o $(DIROBJ)ResultadoBusqueda.o
+SSOOIIGLE: $(DIROBJ)SSOOIIGLE.o $(DIROBJ)Buscador.o $(DIROBJ)ResultadoBusqueda.o $(DIROBJ)Cliente.o $(DIROBJ)Monitor.o $(DIROBJ)SistemaPago.o
 	$(CC) -o $(DIREXE)$@ $^ -pthread
 
 $(DIROBJ)%.o: $(DIRSRC)%.cpp
 	$(CC) $(CFLAGS) -c $< -o $@ 
 
 debug: SSOOIIGLE
-	./$(DIREXE)SSOOIIGLE 17_LEYES_DEL_TRABAJO_EN_EQUIPO.txt la 5 > debug.txt
+	./$(DIREXE)SSOOIIGLE 10 2 > debug.txt
 
 solution: SSOOIIGLE
-	./$(DIREXE)SSOOIIGLE 17_LEYES_DEL_TRABAJO_EN_EQUIPO.txt la 5
-
+	./$(DIREXE)SSOOIIGLE 10 2
